@@ -59,21 +59,14 @@ st.markdown(f"""
     }}
 
     #brivia-video-bg {{
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 80vw;
-        height: 90vh;
+        width: 100%;
+        max-height: 300px;
         object-fit: cover;
-        z-index: 0;
-        pointer-events: none;
-        -webkit-mask-image: radial-gradient(circle at 80% 50%, black 0%, transparent 75%);
-        mask-image: radial-gradient(circle at 80% 50%, black 0%, transparent 75%);
+        border-radius: 8px;
+        margin-bottom: 30px;
     }}
 
     .stMainBlockContainer {{
-        position: relative;
-        z-index: 1;
         background-color: transparent !important;
     }}
 
