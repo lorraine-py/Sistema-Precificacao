@@ -326,8 +326,8 @@ def main():
     # Renderizar fase atual
     if st.session_state.fase_atual == 1:
         renderizar_fase_1()
-    #elif st.session_state.fase_atual == 2:
-    #    renderizar_fase_2()
+    elif st.session_state.fase_atual == 2:
+        renderizar_fase_2()
     #elif st.session_state.fase_atual == 3:
      #   renderizar_fase_3()
     #elif st.session_state.fase_atual == 4:
@@ -688,17 +688,16 @@ def renderizar_fase_1():
         if fase_valida:
             if st.button("Avançar para Equipe CLT", type="primary", use_container_width=True):
                 st.session_state.fase_atual = 2
+                if st.session_state.fase_max_concluida < 2:
+                    st.session_state.fase_max_concluida = 2
                 st.rerun()
         else:
             st.button("Avançar para Equipe CLT", disabled=True, use_container_width=True)
             st.error("!!! Preencha todos os campos obrigatórios (*) para avançar")
 
-if __name__ == "__main__":
-    main()
-#fase 2
+# ==================== FASE 2: EQUIPE CLT ====================
 
-#a partir daqui, preciso que já esteja na fase 2 equipe clt
-# 2. MAPEAMENTO ATUALIZADO (Etapa 6 - Oferta Brivia 2025)
+# MAPEAMENTO ATUALIZADO (Etapa 6 - Oferta Brivia 2025)
 MAPEAMENTO_OFERTAS = {
     "Ad Campaign": "Communication & Advertising Management",
     "Always on Communication": "Communication & Advertising Management",
@@ -742,41 +741,57 @@ MAPEAMENTO_OFERTAS = {
     "Predicting Analysis & Artificial Intelligence Process": "Data Factory"
 }
 
-# 3. INPUTS DA EQUIPE CLT
-st.markdown('<div class="brivia-alerta">Preencha os dados abaixo para calcular a alocação CLT do serviço.</div>', unsafe_allow_html=True)
+def renderizar_fase_2():
+    st.header("FASE 2: Equipe CLT")
+    st.markdown('<div class="brivia-alerta">Preencha os dados abaixo para calcular a alocação CLT do serviço.</div>', unsafe_allow_html=True)
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-with col1:
-    perfil = st.selectbox("Perfil", ["Gerente de DBM", "CRM Planner", "Arquiteto Salesforce", "Analista de Dados"])
-    nivel = st.selectbox("Nível", ["1. Junior", "2. Pleno", "3. Sênior", "4. Líder", "5. Head", "6. Especialista"])
-    
-with col2:
-    # ETAPA 6: Oferta Brivia baseada no Serviço
-    servico = st.selectbox("Serviço Brivia", list(MAPEAMENTO_OFERTAS.keys()))
-    oferta_2025 = MAPEAMENTO_OFERTAS.get(servico, "Não mapeado")
-    st.text_input("Oferta Brivia", value=oferta_2025, disabled=True)
+    with col1:
+        perfil = st.selectbox("Perfil", ["Gerente de DBM", "CRM Planner", "Arquiteto Salesforce", "Analista de Dados"])
+        nivel = st.selectbox("Nível", ["1. Junior", "2. Pleno", "3. Sênior", "4. Líder", "5. Head", "6. Especialista"])
 
-st.markdown("---")
+    with col2:
+        # ETAPA 6: Oferta Brivia baseada no Serviço
+        servico = st.selectbox("Serviço Brivia", list(MAPEAMENTO_OFERTAS.keys()))
+        oferta_2025 = MAPEAMENTO_OFERTAS.get(servico, "Não mapeado")
+        st.text_input("Oferta Brivia", value=oferta_2025, disabled=True)
 
-col3, col4 = st.columns(2)
+    st.markdown("---")
 
-with col3:
-    qtd_func = st.number_input("Quantidade de Funcionários", min_value=1, value=1, step=1)
-    
-with col4:
-    dedicacao = st.slider("Porcentagem de Dedicação (%)", 0, 100, 100)
+    col3, col4 = st.columns(2)
 
-# 4. ETAPA 7: CÁLCULO DA QUANTIDADE DE HORAS
-horas_mes = 170
-total_horas = qtd_func * (dedicacao / 100) * horas_mes
+    with col3:
+        qtd_func = st.number_input("Quantidade de Funcionários", min_value=1, value=1, step=1)
 
-# EXIBIÇÃO DO RESULTADO (Impacto Visual)
-st.markdown(f"""
-<div style="background: rgba(144, 81, 59, 0.1); border: 1px solid #90513b; padding: 20px; border-radius: 8px; text-align: center;">
-    <p style="margin:0; font-size: 0.8rem; color: rgba(255,255,255,0.6); text-transform: uppercase;">Etapa 7: Quantidade Total de Horas</p>
-    <h2 style="margin:0; font-size: 3rem; color: #ffffff;">{total_horas:.1f} <span style="font-size: 1rem;">Horas/Mês</span></h2>
-</div>
-""", unsafe_allow_html=True)
+    with col4:
+        dedicacao = st.slider("Porcentagem de Dedicação (%)", 0, 100, 100)
 
-st.write(f"Ref: {qtd_func} funcionário(s) com {dedicacao}% de dedicação sobre a base de {horas_mes}h.")
+    # ETAPA 7: CÁLCULO DA QUANTIDADE DE HORAS
+    horas_mes = 170
+    total_horas = qtd_func * (dedicacao / 100) * horas_mes
+
+    # EXIBIÇÃO DO RESULTADO (Impacto Visual)
+    st.markdown(f"""
+    <div style="background: rgba(144, 81, 59, 0.1); border: 1px solid #90513b; padding: 20px; border-radius: 8px; text-align: center;">
+        <p style="margin:0; font-size: 0.8rem; color: rgba(255,255,255,0.6); text-transform: uppercase;">Etapa 7: Quantidade Total de Horas</p>
+        <h2 style="margin:0; font-size: 3rem; color: #ffffff;">{total_horas:.1f} <span style="font-size: 1rem;">Horas/Mês</span></h2>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.write(f"Ref: {qtd_func} funcionário(s) com {dedicacao}% de dedicação sobre a base de {horas_mes}h.")
+
+    st.markdown("---")
+
+    # BOTÕES DE NAVEGAÇÃO
+    col1, col2, col3 = st.columns([2, 1, 2])
+
+    with col2:
+        if st.button("Avançar para Terceiros", type="primary", use_container_width=True):
+            st.session_state.fase_atual = 3
+            if st.session_state.fase_max_concluida < 3:
+                st.session_state.fase_max_concluida = 3
+            st.rerun()
+
+if __name__ == "__main__":
+    main()
