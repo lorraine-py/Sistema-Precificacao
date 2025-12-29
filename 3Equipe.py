@@ -697,74 +697,7 @@ if __name__ == "__main__":
     main()
 #fase 2
 
-import streamlit as st
-
-# 1. CONFIGURAÇÃO E IDENTIDADE VISUAL (Mantendo o padrão Brivia)
-st.set_page_config(page_title="Brivia - Fase 2", layout="wide")
-
-logo_url = "https://cdn.prod.website-files.com/65c2dcb4330facd527e06bdd/6619a7597575e945de440959_brivia_group.svg"
-
-st.markdown(f"""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;700&display=swap');
-    .stApp {{ background-color: #000000 !important; }}
-    .header-brivia {{ display: flex; align-items: center; padding-bottom: 30px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }}
-    .logo-brivia {{ height: 35px; margin-right: 20px; filter: brightness(0) invert(1) !important; }}
-    .brivia-alerta {{ padding: 15px; border-radius: 4px; background-color: rgba(255,255,255,0.05); border-left: 5px solid #90513b; color: #ffffff; font-family: 'Space Grotesk'; font-size: 0.9rem; margin-bottom: 25px; }}
-    .fase-container {{ padding: 12px; border-radius: 4px; text-align: center; font-family: 'Space Grotesk'; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; }}
-    .fase-atual {{ background: linear-gradient(#000, #000) padding-box, linear-gradient(135deg, #90513b, #ffffff) border-box; border: 2px solid transparent; color: #ffffff !important; font-weight: 700; box-shadow: 0 0 15px rgba(144, 81, 59, 0.4); }}
-    .fase-ok {{ border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.6); }}
-    .fase-espera {{ border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); }}
-    h1, h2, h3, label, p {{ font-family: 'Space Grotesk', sans-serif !important; color: white !important; }}
-</style>
-<div class="header-brivia">
-    <img src="{logo_url}" class="logo-brivia">
-    <h1 style="margin:0; font-size: 1.8rem; letter-spacing: -1px;">Dimensionamento Equipe CLT</h1>
-</div>
-""", unsafe_allow_html=True)
-
-# Indicador de Fases
-import streamlit as st
-
-
-if 'fase_atual' not in st.session_state:
-    st.session_state.fase_atual = 2  # Definimos como 2 porque este é o arquivo da Fase 2
-
-
-col1, col2, col3, col4 = st.columns(4)
-    
-with col1:
-    if st.session_state.fase_atual == 1:
-        st.markdown('<div class="fase-container fase-atual">Fase 1: Dados Básicos</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="fase-container fase-ok">Fase 1: Ok</div>', unsafe_allow_html=True)
-
-with col2:
-    if st.session_state.fase_atual == 2:
-        st.markdown('<div class="fase-container fase-atual">Fase 2: Equipe CLT</div>', unsafe_allow_html=True)
-    elif st.session_state.fase_atual > 2:
-        st.markdown('<div class="fase-container fase-ok">Fase 2: Ok</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="fase-container fase-espera">Fase 2: Aguardando</div>', unsafe_allow_html=True)
-
-with col3:
-    if st.session_state.fase_atual == 3:
-        st.markdown('<div class="fase-container fase-atual">Fase 3: Terceiros</div>', unsafe_allow_html=True)
-    elif st.session_state.fase_atual > 3:
-        st.markdown('<div class="fase-container fase-ok">Fase 3: Ok</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="fase-container fase-espera">Fase 3: Aguardando</div>', unsafe_allow_html=True)
-
-with col4:
-    if st.session_state.fase_atual == 4:
-        st.markdown('<div class="fase-container fase-atual">Fase 4: Ferramentas</div>', unsafe_allow_html=True)
-    elif st.session_state.fase_atual > 4:
-        st.markdown('<div class="fase-container fase-ok">Fase 4: Ok</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="fase-container fase-espera">Fase 4: Aguardando</div>', unsafe_allow_html=True)
-
-st.markdown("---")
-
+#a partir daqui, preciso que já esteja na fase 2 equipe clt
 # 2. MAPEAMENTO ATUALIZADO (Etapa 6 - Oferta Brivia 2025)
 MAPEAMENTO_OFERTAS = {
     "Ad Campaign": "Communication & Advertising Management",
