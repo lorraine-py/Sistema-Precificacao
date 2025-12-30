@@ -1,6 +1,6 @@
 """
 Base Modelagem Precificação
-FASE 1: Dados Básicos
+Sistema Completo: Fase 1 (Dados Básicos) + Fase 2 (Equipe CLT)
 """
 
 import streamlit as st
@@ -8,6 +8,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+from database import *
 
 
 st.set_page_config(
