@@ -409,12 +409,53 @@ MAPEAMENTO_OFERTAS = {
     "Predicting Analysis & Artificial Intelligence Process": "Data Factory"
 }
 
-# --- RECEITA TOTAL POR CENÁRIO (7. GM!B7) ---
-RECEITA_TOTAL_CENARIO = {
-    "mercado": 37358.00,
-    "minima": 26711.00,
-    "brivia": 36273.00
-}
+# ==================== CÁLCULO DINÂMICO DE RECEITA TOTAL ====================
+
+def calcular_receita_total(tipo_contrato, soma_custos, gross_margin_alvo, aliquota_imposto,
+                           comissao_nb, comissao_parceiros, outras_receitas):
+    """
+    Calcula a receita total baseada na fórmula de precificação reversa.
+
+    Fórmula da planilha:
+    =SE('2. Dados'!$C$11="Fee";
+        (-SOMA(B$26:B$30)) / ((1 - GM_ALVO) - IMPOSTO - ((COM_NB + COM_PARCEIROS) * (1 - GM_ALVO))) - SOMA(B$10:B$15);
+        0)
+
+    Para "Projeto" usa a mesma fórmula.
+
+    Args:
+        tipo_contrato: "Fee" ou "Projeto"
+        soma_custos: Soma total de custos (Pessoal + Terceiros + Materiais + Viagens + Outros + Comissões)
+        gross_margin_alvo: Margem bruta alvo em % (ex: 40.0)
+        aliquota_imposto: Alíquota de imposto em % (ex: 6.65)
+        comissao_nb: Comissão NB em % (ex: 2.0)
+        comissao_parceiros: Comissão parceiros em % (ex: 3.0)
+        outras_receitas: Soma de outras receitas (1.3 a 1.8)
+
+    Returns:
+        Receita total calculada (ou 0 se não for Fee/Projeto)
+    """
+    if tipo_contrato not in ["Fee", "Projeto"]:
+        return 0.0
+
+    # Converter percentuais para decimais
+    gm = gross_margin_alvo / 100
+    imposto = aliquota_imposto / 100
+    com_nb = comissao_nb / 100
+    com_parc = comissao_parceiros / 100
+
+    # Cálculo do denominador
+    denominador = (1 - gm) - imposto - ((com_nb + com_parc) * (1 - gm))
+
+    # Evitar divisão por zero
+    if denominador == 0:
+        return 0.0
+
+    # Cálculo da receita
+    # soma_custos já vem positivo, então não precisa do sinal negativo
+    receita = (soma_custos / denominador) - outras_receitas
+
+    return max(receita, 0.0)  # Garantir que não retorne negativo
 
 # ==================== 3. LÓGICA DA INTERFACE ====================
 
@@ -424,6 +465,42 @@ def renderizar_fase_2():
 
     if 'lista_equipe' not in st.session_state:
         st.session_state.lista_equipe = []
+
+    # ==================== BUSCAR DADOS DA FASE 1 ====================
+    # Verificar se os dados da Fase 1 existem
+    if 'dados_basicos' not in st.session_state:
+        st.warning("⚠️ Por favor, complete a Fase 1 (Dados Básicos) primeiro.")
+        return
+
+    # Extrair dados necessários da Fase 1
+    dados = st.session_state.dados_basicos
+    tipo_contrato = dados.get('tipo_contrato', 'Fee')
+    quantidade_meses = dados.get('quantidade_meses', 12)
+
+    # Gross Margin = GM Alvo (40%) - Desconto
+    GROSS_MARGIN_ALVO = 40.0
+    desconto_gm = st.session_state.gross_margin.get('desconto', 0.0) if 'gross_margin' in st.session_state else 0.0
+    gross_margin_final = GROSS_MARGIN_ALVO - desconto_gm
+
+    aliquota_imposto = dados.get('aliquota_imposto', 0.0)
+    comissao_nb = dados.get('comissao_nb', 0)
+    comissao_parceiros = dados.get('comissao_parceiros', 0)
+
+    # Calcular soma de outras receitas (1.3 a 1.8)
+    outras_receitas_total = 0.0
+    if 'receita_bruta' in st.session_state:
+        for linha, valores in st.session_state.receita_bruta.items():
+            verba = valores.get('verba_total', 0.0)
+            comissao_pct = valores.get('comissao_pct', 0.0)
+            outras_receitas_total += verba * (comissao_pct / 100)
+
+    # Calcular custos fixos da Fase 1 (Viagens + Outros Custos)
+    custos_fixos_total = 0.0
+    if 'custos' in st.session_state:
+        for linha, valores in st.session_state.custos.items():
+            if linha not in ["Terceiros", "Materiais"]:  # Esses são calculados em outras fases
+                valor_mensal = valores.get('valor_mensal', 0.0)
+                custos_fixos_total += valor_mensal * quantidade_meses
 
     # --- SELEÇÃO DE RÉGUA SALARIAL ---
     regua_selecionada = st.radio(
@@ -500,15 +577,30 @@ def renderizar_fase_2():
         df[['Salário Base', 'Custo Hora', 'Custo Total']] = df.apply(calc_financeiro, axis=1)
         
         # 2. Etapa 11: Rateio Proporcional (Fórmula: K10 / K42 * B7)
-        soma_k42 = df["Custo Total"].sum() # Soma de todos os custos totais (K42)
-        receita_b7 = RECEITA_TOTAL_CENARIO[regua_id] # Receita do cenário (B7)
-        
+        soma_k42 = df["Custo Total"].sum()  # Soma de todos os custos CLT (K42)
+
+        # Calcular RECEITA TOTAL dinamicamente (B7)
+        # Soma de custos = Custos CLT (K42) + Custos Fixos da Fase 1
+        # Nota: Terceiros e Materiais serão adicionados nas próximas fases
+        soma_custos_total = soma_k42 + custos_fixos_total
+
+        # Calcular receita usando a fórmula de precificação reversa
+        receita_b7 = calcular_receita_total(
+            tipo_contrato=tipo_contrato,
+            soma_custos=soma_custos_total,
+            gross_margin_alvo=gross_margin_final,
+            aliquota_imposto=aliquota_imposto,
+            comissao_nb=comissao_nb,
+            comissao_parceiros=comissao_parceiros,
+            outras_receitas=outras_receitas_total
+        )
+
         if soma_k42 > 0:
             # Aplicação exata da sua fórmula: SE($E10=0;0;$K10/K$42*'7. GM'!B$7)
             df["Preço Venda"] = (df["Custo Total"] / soma_k42) * receita_b7
         else:
             df["Preço Venda"] = 0.0
-            
+
         # Tratamento de erro/vazio (SEERRO)
         df["Preço Venda"] = df["Preço Venda"].fillna(0.0)
         
@@ -529,9 +621,39 @@ def renderizar_fase_2():
 
         # Resumo Financeiro Acumulado para conferência
         st.markdown("---")
-        c_tot1, c_tot2 = st.columns(2)
-        c_tot1.metric("Soma Custos Totais (K42)", f"R$ {soma_k42:,.2f}")
-        c_tot2.metric("Soma Preços Venda (B7)", f"R$ {df['Preço Venda'].sum():,.2f}")
+        st.subheader("Resumo Financeiro")
+
+        col_r1, col_r2, col_r3 = st.columns(3)
+        col_r1.metric("Custos CLT (Pessoal)", f"R$ {soma_k42:,.2f}")
+        col_r2.metric("Custos Fixos (Fase 1)", f"R$ {custos_fixos_total:,.2f}")
+        col_r3.metric("Custo Total", f"R$ {soma_custos_total:,.2f}")
+
+        col_r4, col_r5, col_r6 = st.columns(3)
+        col_r4.metric("Outras Receitas", f"R$ {outras_receitas_total:,.2f}")
+        col_r5.metric("Receita Total (B7)", f"R$ {receita_b7:,.2f}")
+        col_r6.metric("Soma Preços Venda", f"R$ {df['Preço Venda'].sum():,.2f}")
+
+        # Exibir detalhes dos parâmetros usados no cálculo
+        with st.expander("📊 Ver Detalhes do Cálculo de Receita"):
+            st.markdown(f"""
+            **Parâmetros do Cálculo:**
+            - Tipo de Contrato: **{tipo_contrato}**
+            - Gross Margin Alvo: **{gross_margin_final:.2f}%**
+            - Alíquota de Imposto: **{aliquota_imposto:.2f}%**
+            - Comissão NB: **{comissao_nb}%**
+            - Comissão Parceiros: **{comissao_parceiros}%**
+            - Duração: **{quantidade_meses} meses**
+
+            **Fórmula Aplicada:**
+            ```
+            Receita = (Soma_Custos / Denominador) - Outras_Receitas
+
+            Onde:
+            Denominador = (1 - GM) - Imposto - ((Com_NB + Com_Parceiros) * (1 - GM))
+            Denominador = (1 - {gross_margin_final/100:.4f}) - {aliquota_imposto/100:.4f} - (({comissao_nb/100:.4f} + {comissao_parceiros/100:.4f}) * (1 - {gross_margin_final/100:.4f}))
+            Denominador = {(1 - gross_margin_final/100) - (aliquota_imposto/100) - ((comissao_nb/100 + comissao_parceiros/100) * (1 - gross_margin_final/100)):.6f}
+            ```
+            """)
 
 # Inicialização e Execução
 if 'fase_atual' not in st.session_state:
